@@ -2,6 +2,20 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
+const fileSchema = new mongoose.Schema(
+  {
+    public_id: {
+      type: String, // cloudinary public_id
+      required: true,
+    },
+    url: {
+      type: String, // cloudinary url
+      required: true,
+    },
+  },
+  { _id: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
     username: {
@@ -28,12 +42,10 @@ const userSchema = new mongoose.Schema(
       index: true,
     },
     avatar: {
-      type: String, // cloudinary url
+      type: fileSchema,
       required: true,
     },
-    coverImage: {
-      type: String,
-    },
+    coverImage: fileSchema,
     watchHistory: [
       {
         type: mongoose.Schema.Types.ObjectId,
