@@ -50,4 +50,4 @@ async function deleteFileFromCloudinary(publicId, resource_type) {
   }
 }
 
-export { UploadFileOnCloudinary, deleteFileFromCloudinary };
+export { UploadFileOnCloudinary, deleteFileFromCloudinary, safeFileCleanup };

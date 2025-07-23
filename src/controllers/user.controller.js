@@ -1,3 +1,4 @@
+import fs from "fs";
 import jwt from "jsonwebtoken";
 import ApiError from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
@@ -6,6 +7,7 @@ import asyncHandler from "../utils/AsyncHandler.js";
 import {
   UploadFileOnCloudinary,
   deleteFileFromCloudinary,
+  safeFileCleanup,
 } from "../utils/cloudinary.js";
 
 const options = {
@@ -43,34 +45,8 @@ const registerUser = asyncHandler(async (req, res) => {
   // check for user creation
   // return response
 
-  const { fullName, username, email, password } = req.body;
-
-  if (
-    [fullName, username, email, password].some((field) => field?.trim() === "")
-  ) {
-    throw new ApiError(400, "All fields are required");
-  }
-
-  const existedUser = await User.findOne({
-    $or: [{ username }, { email }],
-  });
-
-  if (existedUser) {
-    throw new ApiError(409, "User with email or username already exists");
-  }
-
-  // console.log(req.files);
-
   const avatarLocalPath = req.files?.avatar?.[0]?.path;
-  // const coverImageLocalPath = req.files?.coverImage[0]?.path;
-  // console.log(coverImageLocalPath);
-
-  if (!avatarLocalPath) {
-    throw new ApiError(400, "Avatar file is required");
-  }
-
   let coverImageLocalPath;
-  let coverImage = null;
 
   if (
     req.files &&
@@ -78,37 +54,75 @@ const registerUser = asyncHandler(async (req, res) => {
     req.files.coverImage.length > 0
   ) {
     coverImageLocalPath = req.files.coverImage[0].path;
-    coverImage = await UploadFileOnCloudinary(coverImageLocalPath); // ✅ Upload only when file exists
   }
 
-  const avatar = await UploadFileOnCloudinary(avatarLocalPath);
+  try {
+    const { fullName, username, email, password } = req.body;
 
-  if (!avatar) {
-    throw new ApiError(400, "Avatar file is required");
+    if (
+      [fullName, username, email, password].some(
+        (field) => field?.trim() === ""
+      )
+    ) {
+      throw new ApiError(400, "All fields are required");
+    }
+
+    if (!avatarLocalPath) {
+      throw new ApiError(400, "Avatar file is required");
+    }
+
+    const existedUser = await User.findOne({
+      $or: [{ username }, { email }],
+    });
+
+    if (existedUser) {
+      throw new ApiError(409, "User with email or username already exists");
+    }
+
+    const avatar = await UploadFileOnCloudinary(avatarLocalPath);
+    const coverImage = coverImageLocalPath
+      ? await UploadFileOnCloudinary(coverImageLocalPath)
+      : null;
+
+    if (!avatar) {
+      throw new ApiError(400, "Avatar file is required");
+    }
+
+    const user = await User.create({
+      fullName,
+      email,
+      password,
+      username: username.toLowerCase(),
+      avatar: { public_id: avatar.public_id, url: avatar.url },
+      coverImage: coverImage
+        ? { public_id: coverImage.public_id, url: coverImage.url }
+        : null,
+    });
+
+    const createdUser = await User.findById(user._id).select(
+      "-password -refreshToken"
+    );
+
+    if (!createdUser) {
+      throw new ApiError(
+        500,
+        "Something went wrong while registering the user"
+      );
+    }
+
+    return res
+      .status(201)
+      .json(new ApiResponse(200, createdUser, "User registered successfully"));
+  } catch (error) {
+    if (avatarLocalPath && fs.existsSync(avatarLocalPath)) {
+      safeFileCleanup(avatarLocalPath);
+    }
+    if (coverImageLocalPath && fs.existsSync(coverImageLocalPath)) {
+      safeFileCleanup(coverImageLocalPath);
+    }
+
+    throw error;
   }
-
-  const user = await User.create({
-    fullName,
-    email,
-    password,
-    username: username.toLowerCase(),
-    avatar: { public_id: avatar.public_id, url: avatar.url },
-    coverImage: coverImage
-      ? { public_id: coverImage.public_id, url: coverImage.url }
-      : null,
-  });
-
-  const createdUser = await User.findById(user._id).select(
-    "-password -refreshToken"
-  );
-
-  if (!createdUser) {
-    throw new ApiError(500, "Something went wrong while registering the user");
-  }
-
-  return res
-    .status(201)
-    .json(new ApiResponse(200, createdUser, "User registered successfully"));
 });
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -184,7 +198,7 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingRefreshToken =
-    req.cookies.refreshToken || req.body.refreshToken;
+    req.cookies?.refreshToken || req.body?.refreshToken;
 
   if (!incomingRefreshToken) {
     throw new ApiError(401, "Unauthorized request");
@@ -206,7 +220,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       throw new ApiError(401, "Refresh token is expired or used");
     }
 
-    const { accessToken, newRefreshToken } =
+    const { accessToken, refreshToken: newRefreshToken } =
       await generateAccessAndRefreshTokens(user._id);
 
     return res
@@ -216,7 +230,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       .json(
         new ApiResponse(
           200,
-          { accessToken, refreshToken: newRefreshToken },
+          { accessToken, newRefreshToken },
           "Access token refreshed"
         )
       );
@@ -256,10 +270,10 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields are required");
   }
 
-  const user = User.findByIdAndUpdate(
+  const user = await User.findByIdAndUpdate(
     req.user?._id,
     { $set: { fullName, email } },
-    { new: true }
+    { new: true, lean: true }
   ).select("-password -refreshToken");
 
   return res
@@ -299,8 +313,6 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   //   { new: true }
   // ).select("-password");
 
-  // todo: delete old image from cloudinary
-
   return res
     .status(200)
     .json(new ApiResponse(200, user, "Avatar image updated successfully"));
@@ -312,8 +324,6 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   if (!coverImageLocalPath) {
     throw new ApiError(400, "Cover image file is missing");
   }
-
-  // todo: delete old image from cloudinary
 
   const coverImage = await UploadFileOnCloudinary(coverImageLocalPath);
 
