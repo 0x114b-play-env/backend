@@ -1,4 +1,4 @@
-import mongoose, { STATES } from "mongoose";
+import mongoose from "mongoose";
 
 const tweetSchema = new mongoose.Schema(
   {
