@@ -17,7 +17,7 @@ function safeFileCleanup(filePath) {
   }
 }
 
-async function UploadFileOnCloudinary(localFilePath) {
+async function uploadFileOnCloudinary(localFilePath) {
   try {
     if (!localFilePath) return null;
     const uploadResult = await cloudinary.uploader.upload(localFilePath, {
@@ -50,4 +50,4 @@ async function deleteFileFromCloudinary(publicId, resource_type) {
   }
 }
 
-export { UploadFileOnCloudinary, deleteFileFromCloudinary, safeFileCleanup };
+export { uploadFileOnCloudinary, deleteFileFromCloudinary, safeFileCleanup };

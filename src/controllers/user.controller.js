@@ -1,12 +1,12 @@
 import fs from "fs";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
-import ApiError from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
+import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/AsyncHandler.js";
 import {
-  UploadFileOnCloudinary,
+  uploadFileOnCloudinary,
   deleteFileFromCloudinary,
   safeFileCleanup,
 } from "../utils/cloudinary.js";
@@ -45,6 +45,10 @@ const registerUser = asyncHandler(async (req, res) => {
   // remove password & refreshToken field from response
   // check for user creation
   // return response
+
+  if (!req.body || typeof req.body !== "object") {
+    throw new ApiError(400, "Request body is required");
+  }
 
   const avatarLocalPath = req.files?.avatar?.[0]?.path;
   let coverImageLocalPath;
@@ -133,6 +137,10 @@ const loginUser = asyncHandler(async (req, res) => {
   // check the password
   // generate access and refresh token
   // send cookie
+
+  if (!req.body || typeof req.body !== "object") {
+    throw new ApiError(400, "Request body is required");
+  }
 
   const { email, username, password } = req.body;
 
