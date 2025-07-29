@@ -33,11 +33,10 @@ const createTweet = asyncHandler(async (req, res) => {
 
 const getUserTweets = asyncHandler(async (req, res) => {
   // TODO: get user tweets
-  const {userId} = req.params;
+  const { userId } = req.params;
 
   if (!userId) {
-        throw new ApiError(400, "user id is missing");
-    
+    throw new ApiError(400, "user id is missing");
   }
 
   const userTweets = await Tweet.find({ owner: userId });
@@ -50,10 +49,8 @@ const getUserTweets = asyncHandler(async (req, res) => {
 });
 
 const updateTweet = asyncHandler(async (req, res) => {
-  //TODO: update tweet 
-
+  //TODO: update tweet
   // const tweetToUpdate;
-
 });
 
 const deleteTweet = asyncHandler(async (req, res) => {
