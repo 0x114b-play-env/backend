@@ -84,9 +84,9 @@ const registerUser = asyncHandler(async (req, res) => {
       throw new ApiError(409, "User with email or username already exists");
     }
 
-    const avatar = await UploadFileOnCloudinary(avatarLocalPath);
+    const avatar = await uploadFileOnCloudinary(avatarLocalPath);
     const coverImage = coverImageLocalPath
-      ? await UploadFileOnCloudinary(coverImageLocalPath)
+      ? await uploadFileOnCloudinary(coverImageLocalPath)
       : null;
 
     if (!avatar) {
@@ -282,7 +282,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
   const user = await User.findByIdAndUpdate(
     req.user?._id,
     { $set: { fullName, email } },
-    { new: true, lean: true }
+    { new: true }
   ).select("-password -refreshToken");
 
   return res
@@ -297,7 +297,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Avatar file is missing");
   }
 
-  const avatar = await UploadFileOnCloudinary(avatarLocalPath);
+  const avatar = await uploadFileOnCloudinary(avatarLocalPath);
 
   if (!avatar.url) {
     throw new ApiError(500, "Error while uploading avatar file");
@@ -334,7 +334,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Cover image file is missing");
   }
 
-  const coverImage = await UploadFileOnCloudinary(coverImageLocalPath);
+  const coverImage = await uploadFileOnCloudinary(coverImageLocalPath);
 
   if (!coverImage.url) {
     throw new ApiError(500, "Error while uploading cover image file");
