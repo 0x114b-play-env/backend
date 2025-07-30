@@ -6,8 +6,39 @@ import asyncHandler from "../utils/AsyncHandler.js";
 
 const createPlaylist = asyncHandler(async (req, res) => {
   const { name, description } = req.body;
+  
+  if (!name || !description) {
+    throw new ApiError(
+      400,
+      "Both name and description are required to create a playlist"
+    );
+  }
 
-  //TODO: create playlist
+  if (typeof name !== "string" || typeof description !== "string") {
+    throw new ApiError(
+      400,
+      "Both name and description should be of type string"
+    );
+  }
+
+  const trimmedName = name.trim();
+  const trimmedDescription = description.trim();
+
+  if (trimmedName === "" || trimmedDescription === "") {
+    throw new ApiError(400, "Both name and description cannot be empty");
+  }
+
+  const createdPlaylist = await Playlist.create({
+    name: trimmedName,
+    description: trimmedDescription,
+    owner: req.user._id,
+  });
+
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(201, createdPlaylist, "Playlist created successfully")
+    );
 });
 
 const getUserPlaylists = asyncHandler(async (req, res) => {
