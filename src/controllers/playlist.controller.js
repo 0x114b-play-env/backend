@@ -41,8 +41,6 @@ const createPlaylist = asyncHandler(async (req, res) => {
     );
 });
 
-// Populate owner in getUserPlaylists: If you want some user info in user playlists (owner details or video counts), consider light population or projections.
-
 const getUserPlaylists = asyncHandler(async (req, res) => {
   //TODO: get user playlists
   const { userId } = req.params;
@@ -102,9 +100,29 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
       },
     },
     {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+        pipeline: [
+          {
+            $project: {
+              fullName: 1,
+              username: 1,
+              avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
       $addFields: {
         videoCount: {
           $size: "$videos",
+        },
+        owner: {
+          $first: "$owner",
         },
       },
     },
