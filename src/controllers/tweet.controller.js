@@ -97,7 +97,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
   });
 
   if (!deletedTweet) {
-    throw new ApiError(404, "Tweet not found or not authorized");
+    throw new ApiError(404, "Tweet not found or you are not authorized");
   }
 
   return res
