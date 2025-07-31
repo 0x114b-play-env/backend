@@ -181,6 +181,33 @@ const getPlaylistById = asyncHandler(async (req, res) => {
         ],
       },
     },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+        pipeline: [
+          {
+            $project: {
+              fullName: 1,
+              username: 1,
+              avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: {
+        videoCount: {
+          $size: "$videos",
+        },
+        owner: {
+          $first: "$owner",
+        },
+      },
+    },
   ]);
 
   if (!userPlaylist?.length) {
