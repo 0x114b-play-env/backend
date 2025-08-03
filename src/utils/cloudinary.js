@@ -7,14 +7,16 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-function safeFileCleanup(filePath) {
-  try {
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+function safeFileCleanup(...filePaths) {
+  filePaths.forEach((filePath) => {
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (error) {
+      console.error(`Failed to clean up file: ${filePath}`, error);
     }
-  } catch (error) {
-    console.error(`Failed to clean up file: ${filePath}`, error);
-  }
+  });
 }
 
 async function uploadFileOnCloudinary(localFilePath) {
