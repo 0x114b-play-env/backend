@@ -16,8 +16,11 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
   //TODO: get all videos based on query, sort, pagination
 
-  const pageNum = parseInt(page, 10) || 1;
-  const limitNum = parseInt(limit, 10) || 10;
+  let limitNum = parseInt(limit, 10);
+  if (isNaN(limitNum) || limitNum <= 0) limitNum = 10;
+
+  let pageNum = parseInt(page, 10);
+  if (isNaN(pageNum) || pageNum <= 0) pageNum = 1;
 
   // const skip = (pageNum - 1) * limitNum;
 

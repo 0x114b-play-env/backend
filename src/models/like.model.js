@@ -13,6 +13,7 @@ const likeSchema = new mongoose.Schema(
     likedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      required: true,
     },
     tweet: {
       type: mongoose.Schema.Types.ObjectId,
