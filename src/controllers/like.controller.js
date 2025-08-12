@@ -14,7 +14,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 
   const userHasUnliked = await Like.findOneAndDelete({
     video: videoId,
-    owner,
+    likedBy: owner,
   });
 
   let userLike = null;
@@ -23,7 +23,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
   if (!userHasUnliked) {
     userLike = await Like.create({
       video: videoId,
-      owner,
+      likedBy: owner,
     });
     message = "Video liked successfully";
   } else {
@@ -45,7 +45,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 
   const userHasUnliked = await Like.findOneAndDelete({
     comment: commentId,
-    owner,
+    likedBy: owner,
   });
 
   let userLike = null;
@@ -54,7 +54,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
   if (!userHasUnliked) {
     userLike = await Like.create({
       comment: commentId,
-      owner,
+      likedBy: owner,
     });
     message = "Comment liked successfully";
   } else {
@@ -76,7 +76,7 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 
   const userHasUnliked = await Like.findOneAndDelete({
     tweet: tweetId,
-    owner,
+    likedBy: owner,
   });
 
   let userLike = null;
@@ -85,7 +85,7 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
   if (!userHasUnliked) {
     userLike = await Like.create({
       tweet: tweetId,
-      owner,
+      likedBy: owner,
     });
     message = "Tweet liked successfully";
   } else {
@@ -143,9 +143,13 @@ const getLikedVideos = asyncHandler(async (req, res) => {
           },
           {
             $project: {
-              description: 0,
-              isPublished: 0,
-              updatedAt: 0,
+              "videoFile.url": 1,
+              "thumbnail.url": 1,
+              owner: 1,
+              title: 1,
+              duration: 1,
+              views: 1,
+              createdAt: 1,
             },
           },
         ],

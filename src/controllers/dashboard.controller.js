@@ -50,7 +50,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
           pipeline: [
             {
               $match: {
-                $exp: {
+                $expr: {
                   $eq: ["$video", "$$videoId"],
                 },
               },
